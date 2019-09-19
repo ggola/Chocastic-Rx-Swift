@@ -1,50 +1,22 @@
-/// Copyright (c) 2019 Razeware LLC
-///
-/// Permission is hereby granted, free of charge, to any person obtaining a copy
-/// of this software and associated documentation files (the "Software"), to deal
-/// in the Software without restriction, including without limitation the rights
-/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-/// copies of the Software, and to permit persons to whom the Software is
-/// furnished to do so, subject to the following conditions:
-///
-/// The above copyright notice and this permission notice shall be included in
-/// all copies or substantial portions of the Software.
-///
-/// Notwithstanding the foregoing, you may not use, copy, modify, merge, publish,
-/// distribute, sublicense, create a derivative work, and/or sell copies of the
-/// Software in any work that is designed, intended, or marketed for pedagogical or
-/// instructional purposes related to programming, coding, application development,
-/// or information technology.  Permission for such use, copying, modification,
-/// merger, publication, distribution, sublicensing, creation of derivative works,
-/// or sale is expressly withheld.
-///
-/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-/// THE SOFTWARE.
+//
+// 2019 Giulio Gola
+//
 
 import Foundation
 import RxSwift
 import RxCocoa
 
 class ShoppingCart {
+  // Shopping Cart singleton
   static let sharedCart = ShoppingCart()
-  //var chocolates: [Chocolate] = []
-  /*
-   Essentially, rather than setting chocolates to a Swift array of Chocolate objects, you’ve now defined it as a RxSwift BehaviorRelay that has a type of a Swift array of Chocolate objects.
-   
-   BehaviorRelay is a class, so it uses reference semantics. This means that chocolates refers to an instance of BehaviorRelay.
-   
-   BehaviorRelay has a property called value. This stores your array of Chocolate objects.
- */
+  //BehaviorRelay is a class, so it uses reference semantics => chocolates refers to an instance of BehaviorRelay.
   let chocolates: BehaviorRelay<[Chocolate]> = BehaviorRelay(value: [])
 }
 
 //MARK: Non-Mutating Functions
 extension ShoppingCart {
+  
+  // Calculate total cost based on chocolates
   var totalCost: Float {
     return chocolates.value.reduce(0) {
       runningTotal, chocolate in
@@ -52,29 +24,97 @@ extension ShoppingCart {
     }
   }
   
-  var itemCountString: String {
+  // Constructs list of items to be displayed in table view in CartVC
+  var itemsList: [String] {
     guard chocolates.value.count > 0 else {
-      return "🚫🍫"
+      return []
     }
-    
-    //Unique the chocolates
-    let setOfChocolates = Set<Chocolate>(chocolates.value)
-    
-    //Check how many of each exists
-    let itemStrings: [String] = setOfChocolates.map {
+    //This returns itemsList
+    return constructSet().map {
       chocolate in
       let count: Int = chocolates.value.reduce(0) {
         runningTotal, reduceChocolate in
         if chocolate == reduceChocolate {
           return runningTotal + 1
         }
-        
         return runningTotal
       }
-      
+      // For this chocolate (first closure) store the following string in itemStrings: [String]
+      return "\(chocolate.countryFlagEmoji)🍫: \(count)"
+    }    
+  }
+  
+  // Get item country names ordered alphabetically after reducing the list.
+  var itemsNames: [String] {
+    guard chocolates.value.count > 0 else {
+      return []
+    }
+    //This returns itemsNames
+    return constructSet().map {
+      chocolate in
+      return chocolate.countryName
+    }
+  }
+  
+  // Build item string label 
+  var itemCountString: String {
+    guard chocolates.value.count > 0 else {
+      return "🚫🍫"
+    }
+    let itemStrings: [String] = constructSet().map {
+      chocolate in
+      //Count each type count => returns runningTotal
+      let count: Int = chocolates.value.reduce(0) {
+        runningTotal, reduceChocolate in
+        if chocolate == reduceChocolate {
+          return runningTotal + 1
+        }
+        return runningTotal
+      }
+      //Create string for each element
       return "\(chocolate.countryFlagEmoji)🍫: \(count)"
     }
-    
+    //Construct label
     return itemStrings.joined(separator: "\n")
   }
+  
+  //Unique the chocolates: creates an unordered collection of unique elements (in case some chocolates have been repeatedly tapped), which is then sorted by country name alphabetically
+  private func constructSet() -> [Chocolate] {
+    return Set<Chocolate>(chocolates.value).sorted { (c1, c2) -> Bool in
+      return c1.countryName < c2.countryName
+    }
+  }
+  
+  //MARK: Methods to add and remove items when tapping the table view cell in CartVC
+  //Add chocolate item
+  func addChocolateItem(from country: String) {
+    // Find chocolate to add based on all available ones .ofEurope filtered with the country
+    let chocolateToAdd = Chocolate.ofEurope.filter { (chocolate) -> Bool in
+      return chocolate.countryName == country
+    }[0]
+    // Add element (as array)
+    let newValue = chocolates.value + [chocolateToAdd]
+    chocolates.accept(newValue)
+  }
+  
+  // Remove chocolate item
+  func removeChocolateItem(from country: String) {
+    // Find chocolate object to rmeove based on country name
+    let chocolateToRemove = Chocolate.ofEurope.filter { (chocolate) -> Bool in
+      return chocolate.countryName == country
+    }[0]
+    // remove it
+    var chocos = chocolates.value
+    var index = 0
+    for chocolate in chocos {
+      if (chocolate == chocolateToRemove) {
+        chocos.remove(at: index)
+        break
+      }
+      index += 1
+    }
+    // update Relay variable
+    chocolates.accept(chocos)
+  }
+  
 }

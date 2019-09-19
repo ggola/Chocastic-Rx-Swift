@@ -1,30 +1,6 @@
-/// Copyright (c) 2019 Razeware LLC
-///
-/// Permission is hereby granted, free of charge, to any person obtaining a copy
-/// of this software and associated documentation files (the "Software"), to deal
-/// in the Software without restriction, including without limitation the rights
-/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-/// copies of the Software, and to permit persons to whom the Software is
-/// furnished to do so, subject to the following conditions:
-///
-/// The above copyright notice and this permission notice shall be included in
-/// all copies or substantial portions of the Software.
-///
-/// Notwithstanding the foregoing, you may not use, copy, modify, merge, publish,
-/// distribute, sublicense, create a derivative work, and/or sell copies of the
-/// Software in any work that is designed, intended, or marketed for pedagogical or
-/// instructional purposes related to programming, coding, application development,
-/// or information technology.  Permission for such use, copying, modification,
-/// merger, publication, distribution, sublicensing, creation of derivative works,
-/// or sale is expressly withheld.
-///
-/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-/// THE SOFTWARE.
+//
+// 2019 Giulio Gola
+//
 
 import UIKit
 import RxSwift
@@ -37,13 +13,11 @@ class BillingInfoViewController: UIViewController {
   @IBOutlet private var cvvTextField: ValidatingTextField!
   @IBOutlet private var purchaseButton: UIButton!
   
-  // Tells that cardType is an observable property, with initial value .unknown (from the enum list of possible values of cardType)
+  // Tells that cardType is an observable property
   private let cardType: BehaviorRelay<CardType> = BehaviorRelay(value: .unknown)
-  // set dispose bag
   private let disposeBag = DisposeBag()
   
-  // Don't validate at every single digit change, as it can lag the UI. Define throttling interval and validate at every throttling interval.
-  // Throttling is a specialty of RxSwift since there’s often a fair amount of logic to be run when something changes. In this case, a small throttle is worthwhile.
+  // Don't validate at every single digit change, as it can lag the UI. Define throttling interval and validate at every throttling interval. Throttling is a specialty of RxSwift since there’s often a fair amount of logic to be run when something changes.
   private let throttleIntervalInMilliseconds = 100
 
 }
@@ -74,50 +48,40 @@ extension BillingInfoViewController {
 
 //MARK: - RX Setup
 private extension BillingInfoViewController {
+  
   // Let users see what type of credit card they’re inputting based on known card types.
   func setupCardImageDisplay() {
     cardType
-      // Add an Observer to the value of a BehaviorRelay.
       .asObservable()
-      // Subscribe to that Observable to reveal changes to cardType (closure returns cardType)
       .subscribe(onNext: { [unowned self] cardType in
-        // Every time cardType changes value (every throttled 100 msecs) the image of the outlet cardView gets updated with the .image property of the local variable cardType returned in the closure
+        // Do something with cardType when it changes
         self.creditCardImageView.image = cardType.image
       })
-      // Ensure the observer’s disposal in thedisposeBag.
       .disposed(by: disposeBag)
   }
   
   // Card validation with Rx
   func setupTextChangeHandling() {
+    
+    // Return the the contents of the text field as an Observable value. text is RxCocoa extension to UITextField.
     let creditCardValid = creditCardNumberTextField
-      // Return the the contents of the text field as an Observable value. text is another RxCocoa extension, this time to UITextField.
       .rx
       .text
       // The scheduler parameter is tied to a thread. To keep everything on the main thread, use MainScheduler.
       .observeOn(MainScheduler.asyncInstance)
-      // Returns an observable sequence only containing the distinct contiguous elements, based on equality operator, from the source sequence.
       .distinctUntilChanged()
-      // Throttle the input to set up the validation to run based on the interval defined above.
       .throttle(.milliseconds(throttleIntervalInMilliseconds), scheduler: MainScheduler.instance)
-      // Transform the throttled input by applying it to validate(cardText:) provided by the class. If the card input is valid, the ultimate value of the observed boolean will be true.
       .map { [unowned self] in
-        // $0 = first parameter passed into the clusure in this case the string of digits passed by .map when the .text observable is edited
-        self.validate(cardText: $0)
+        self.validate(cardText: $0)  // $0 = first closure parameter
       }
-    
-    // creditCardValid is now an observable of type bool Observable<Bool>
-    // Take the Observable value you’ve created and subscribe to it, updating the validity of the text field based on the incoming value.
+    // creditCardValid is Observable<Bool> (true/false based on valudate)
     creditCardValid
-      .subscribe(onNext: { [unowned self] in
-        // $0 is the first parameter passed in the closure: it is a bool since it refers to an observable bool (creditCardValue)
-        // .valid triggers the UITextField background color (.red or .clear)
-        self.creditCardNumberTextField.valid = $0
+      .subscribe(onNext: { [unowned self] isValid in
+        self.creditCardNumberTextField.valid = isValid  // can also use $0
       })
-      // Add the resulting Disposable to the disposeBag.
-      .disposed(by: disposeBag) //5
+      .disposed(by: disposeBag)
     
-    // Validate Expiration Date and CVV
+    // Validate Expiration Date - same procedure
     let expirationValid = expirationDateTextField
       .rx
       .text
@@ -127,13 +91,13 @@ private extension BillingInfoViewController {
       .map { [unowned self] in
         self.validate(expirationDateText: $0)
     }
-    
     expirationValid
       .subscribe(onNext: { [unowned self] in
         self.expirationDateTextField.valid = $0
       })
       .disposed(by: disposeBag)
     
+    // Validate CVV - same procedure
     let cvvValid = cvvTextField
       .rx
       .text
@@ -142,7 +106,6 @@ private extension BillingInfoViewController {
       .map { [unowned self] in
         self.validate(cvvText: $0)
     }
-    
     cvvValid
       .subscribe(onNext: { [unowned self] in
         self.cvvTextField.valid = $0
@@ -150,14 +113,12 @@ private extension BillingInfoViewController {
       .disposed(by: disposeBag)
     
     // Check all 3 observalbles are valid
-    // This uses Observable’s combineLatest(_:) to take the three observables you’ve already made and generate a fourth. The generated Observable, called everythingValid, is either true or false, depending on whether all three inputs are valid.
     let everythingValid = Observable
       .combineLatest(creditCardValid, expirationValid, cvvValid) {
         $0 && $1 && $2 //All must be true
     }
-    
+    //everythingValid’s value controls the state of the purchase button.
     everythingValid
-      // everythingValid reflects the isEnabled property on UIButton‘s reactive extension. everythingValid’s value controls the state of the purchase button.
       .bind(to: purchaseButton.rx.isEnabled)
       .disposed(by: disposeBag)
 

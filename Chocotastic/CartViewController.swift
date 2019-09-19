@@ -1,75 +1,131 @@
-/// Copyright (c) 2019 Razeware LLC
-///
-/// Permission is hereby granted, free of charge, to any person obtaining a copy
-/// of this software and associated documentation files (the "Software"), to deal
-/// in the Software without restriction, including without limitation the rights
-/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-/// copies of the Software, and to permit persons to whom the Software is
-/// furnished to do so, subject to the following conditions:
-///
-/// The above copyright notice and this permission notice shall be included in
-/// all copies or substantial portions of the Software.
-///
-/// Notwithstanding the foregoing, you may not use, copy, modify, merge, publish,
-/// distribute, sublicense, create a derivative work, and/or sell copies of the
-/// Software in any work that is designed, intended, or marketed for pedagogical or
-/// instructional purposes related to programming, coding, application development,
-/// or information technology.  Permission for such use, copying, modification,
-/// merger, publication, distribution, sublicensing, creation of derivative works,
-/// or sale is expressly withheld.
-///
-/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-/// THE SOFTWARE.
+//
+// 2019 Giulio Gola
+//
 
 import UIKit
+import RxSwift
+import RxCocoa
 
 class CartViewController: UIViewController {
   @IBOutlet private var checkoutButton: UIButton!
-  @IBOutlet private var totalItemsLabel: UILabel!
+  @IBOutlet private var itemsList: UITableView!
   @IBOutlet private var totalCostLabel: UILabel!
+  @IBOutlet private var itemListHeightConstraint: NSLayoutConstraint!
+  
+  // Make chocolatesInCart and chocolatesInCartCountryNames obserable: they are observed by the table view, and they subscribe as observes of chocolates.
+  let chocolatesInCart: BehaviorRelay<[String]> = BehaviorRelay(value: [])
+  let chocolatesInCartCountryNames: BehaviorRelay<[String]> = BehaviorRelay(value: [])
+  
+  let cart = ShoppingCart.sharedCart
+  let disposeBag = DisposeBag()
 }
 
 //MARK: - View lifecycle
 extension CartViewController {
+  
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "Cart"
-    configureFromCart()
+    
+    itemsList.rowHeight = 60
+    itemsList.separatorStyle = .none
+
+    setupCartObserver()
+    setupCellConfiguration()
+    setupCellTapHandling()
   }
+  
 }
 
 //MARK: - IBActions
 extension CartViewController {
   @IBAction func reset() {
-    /*
-     The downside is that if you need to access or change something in that array of chocolates, you must do it via accept(_:). This method on BehaviorRelay updates its value property.
-    */
-    //ShoppingCart.sharedCart.chocolates = []
     ShoppingCart.sharedCart.chocolates.accept([])
     let _ = navigationController?.popViewController(animated: true)
   }
 }
 
-//MARK: - Configuration methods
+extension CartViewController: CartItemCellDelegate {
+  
+  func addPressed(cell: CartItemCell) {
+    let indexPath = self.itemsList.indexPath(for: cell)
+    cart.addChocolateItem(from: chocolatesInCartCountryNames.value[indexPath!.row])
+  }
+  
+  func removePressed(cell: CartItemCell) {
+    let indexPath = self.itemsList.indexPath(for: cell)
+    cart.removeChocolateItem(from: chocolatesInCartCountryNames.value[indexPath!.row])
+  }
+  
+}
+
+// Rx Setup
 private extension CartViewController {
-  func configureFromCart() {
+  
+  // Make totalCostLabel, chocolatesInCart and chocolatesInCartCountryNames observers of chocolates
+  func setupCartObserver() {
+    
     guard checkoutButton != nil else {
       //UI has not been instantiated yet. Bail!
       return
     }
     
-    let cart = ShoppingCart.sharedCart
-    totalItemsLabel.text = cart.itemCountString
-    
-    let cost = cart.totalCost
-    totalCostLabel.text = CurrencyFormatter.dollarsFormatter.string(from: cost)
-    
-    //Disable checkout if there's nothing to check out with
-    checkoutButton.isEnabled = (cost > 0)
+    ShoppingCart.sharedCart.chocolates.asObservable().subscribe(onNext: { [unowned self] chocolates in
+      
+      // totalCostLabel reaction
+      let newCost = self.cart.totalCost
+      self.totalCostLabel.text = CurrencyFormatter.dollarsFormatter.string(from: newCost)
+      //Disable checkout if there's nothing to check out with
+      self.checkoutButton.isEnabled = (newCost > 0)
+      
+      // chocolatesInCart reaction
+      let newItemsList = self.cart.itemsList
+      self.chocolatesInCart.accept(newItemsList)
+      // Set itemList table view height to fit the content
+      self.itemListHeightConstraint.constant = self.itemsList.rowHeight * CGFloat(self.chocolatesInCart.value.count)
+      
+      // chocolatesInCartCountryNames reaction
+      let newCountryNames = self.cart.itemsNames
+      self.chocolatesInCartCountryNames.accept(newCountryNames)
+      
+    }).disposed(by: disposeBag)
   }
+  
+  
+  // Make Table view reactive
+  // Table view data source
+  func setupCellConfiguration() {
+    chocolatesInCart.bind(to: itemsList
+      .rx
+      .items(
+        cellIdentifier: CartItemCell.Identifier,
+        cellType: CartItemCell.self)) {
+          row, item, cell in
+          cell.delegate = self
+          cell.configureWith(chocolateItem: item)
+      }
+      .disposed(by: disposeBag)
+  }
+  
+  // Table view delegate
+  func setupCellTapHandling() {
+    itemsList
+      .rx
+      .modelSelected(String.self)
+      .subscribe(onNext: { [unowned self] item in
+        // Deselect the row
+        if let selectedRowIndexPath = self.itemsList.indexPathForSelectedRow {
+          self.itemsList.deselectRow(at: selectedRowIndexPath, animated: false)
+        }
+      })
+      .disposed(by: disposeBag)
+  }
+
 }
+
+//// MARK: - SegueHandler
+//extension CartViewController: SegueHandler {
+//  enum SegueIdentifier: String {
+//    case ToCheckout
+//  }
+//}

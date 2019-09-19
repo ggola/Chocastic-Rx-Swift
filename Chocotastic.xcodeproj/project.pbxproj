@@ -28,6 +28,8 @@
 		9BE3732D1D05164A0024946D /* ChocolateCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BE3732C1D05164A0024946D /* ChocolateCell.swift */; };
 		9BECE3801D07C934003242EE /* ChocolateIsComingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BECE37F1D07C934003242EE /* ChocolateIsComingViewController.swift */; };
 		B0825D259BF50D0637A67952 /* Pods_Chocotastic.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A20AB293DCC9F450AC8990D /* Pods_Chocotastic.framework */; };
+		B44EF3DB23322F6C00964FB8 /* CartItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44EF3DA23322F6C00964FB8 /* CartItemCell.swift */; };
+		B44EF3DF2333845000964FB8 /* CartItemCellButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44EF3DE2333845000964FB8 /* CartItemCellButton.swift */; };
 		E129AA04220AB371000F0BDC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E129AA03220AB371000F0BDC /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
@@ -56,6 +58,8 @@
 		9BE3732A1D0514790024946D /* Chocolate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Chocolate.swift; sourceTree = "<group>"; };
 		9BE3732C1D05164A0024946D /* ChocolateCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChocolateCell.swift; sourceTree = "<group>"; };
 		9BECE37F1D07C934003242EE /* ChocolateIsComingViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChocolateIsComingViewController.swift; sourceTree = "<group>"; };
+		B44EF3DA23322F6C00964FB8 /* CartItemCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartItemCell.swift; sourceTree = "<group>"; };
+		B44EF3DE2333845000964FB8 /* CartItemCellButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartItemCellButton.swift; sourceTree = "<group>"; };
 		E129AA03220AB371000F0BDC /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		F966C088EDA1C2D22263FC81 /* Pods-Chocotastic.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Chocotastic.release.xcconfig"; path = "Pods/Target Support Files/Pods-Chocotastic/Pods-Chocotastic.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -156,6 +160,8 @@
 			isa = PBXGroup;
 			children = (
 				9BE3732C1D05164A0024946D /* ChocolateCell.swift */,
+				B44EF3DA23322F6C00964FB8 /* CartItemCell.swift */,
+				B44EF3DE2333845000964FB8 /* CartItemCellButton.swift */,
 				9B51488B1D07935300284F30 /* ChocolateButton.swift */,
 				9B51488D1D07C49400284F30 /* ValidatingTextField.swift */,
 			);
@@ -204,6 +210,7 @@
 				TargetAttributes = {
 					9BE373121D0511EE0024946D = {
 						CreatedOnToolsVersion = 7.3.1;
+						DevelopmentTeam = 57MX4FQHZP;
 						LastSwiftMigration = 1020;
 					};
 				};
@@ -288,6 +295,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9B4EDDA31D067DD000C26AD9 /* BillingInfoViewController.swift in Sources */,
+				B44EF3DF2333845000964FB8 /* CartItemCellButton.swift in Sources */,
 				9B51488C1D07935300284F30 /* ChocolateButton.swift in Sources */,
 				9B4EDDAA1D0714FD00C26AD9 /* String+CreditCard.swift in Sources */,
 				9BECE3801D07C934003242EE /* ChocolateIsComingViewController.swift in Sources */,
@@ -303,6 +311,7 @@
 				9B51488A1D078A5100284F30 /* NSDate+CurrentComponents.swift in Sources */,
 				9B4EDDA71D068A2100C26AD9 /* CardType.swift in Sources */,
 				9B5148881D07882F00284F30 /* String+ExpirationDate.swift in Sources */,
+				B44EF3DB23322F6C00964FB8 /* CartItemCell.swift in Sources */,
 				9B4068D31D0E5539009859C5 /* ChocolateNavigationController.swift in Sources */,
 				9BE3732B1D0514790024946D /* Chocolate.swift in Sources */,
 			);
@@ -436,9 +445,10 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = 57MX4FQHZP;
 				INFOPLIST_FILE = Chocotastic/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.razeware.Chocotastic;
+				PRODUCT_BUNDLE_IDENTIFIER = com.giuliogola.chocastic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -450,9 +460,10 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = 57MX4FQHZP;
 				INFOPLIST_FILE = Chocotastic/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.razeware.Chocotastic;
+				PRODUCT_BUNDLE_IDENTIFIER = com.giuliogola.chocastic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
